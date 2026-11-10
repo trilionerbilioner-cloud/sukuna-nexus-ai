@@ -1,0 +1,957 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUKUNA NEXUS AI</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #080b16;
+      color: white;
+      min-height: 100vh;
+    }
+    .workspace {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+    }
+    .card {
+      box-sizing: border-box;
+      width: min(500px, 100%);
+      padding: 32px;
+      border: 1px solid #39345f;
+      border-radius: 12px;
+      background: #11172a;
+      text-align: center;
+      box-shadow: 0 0 50px #7060ff22;
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      box-sizing: border-box;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 20px 14px 14px;
+      border-right: 1px solid #272b42;
+      background: #0c1020;
+    }
+    .sidebar-heading {
+      margin: 2px 0 10px;
+      color: #aeb8d0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    .new-chat-button {
+      margin: 0;
+      border: 1px solid #454363;
+      background: #151a2d;
+      color: #f5f2ff;
+      text-align: left;
+    }
+    .new-chat-button:hover, .history-item:hover { background: #1b2035; }
+    .history-list {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .history-item {
+      overflow: hidden;
+      margin: 0;
+      padding: 10px;
+      border-radius: 8px;
+      background: transparent;
+      color: #c5cce0;
+      font-weight: 400;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-item[aria-current="true"] {
+      background: #25233c;
+      color: #fff;
+    }
+    .empty-history {
+      padding: 4px 2px;
+      color: #8993ad;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: left;
+    }
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid #272b42;
+      text-align: left;
+    }
+    .profile-avatar {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      flex: 0 0 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: #39345f;
+      color: #f5f2ff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .profile-name, .profile-note { display: block; }
+    .profile-name { color: #e8eaf4; font-size: 13px; }
+    .profile-note { margin-top: 3px; color: #8993ad; font-size: 11px; }
+    .app-main {
+      min-width: 0;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      filter: drop-shadow(0 0 12px #a99bff55);
+    }
+    .brand-name {
+      color: #f5f2ff;
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+    .brand-name span {
+      display: block;
+      margin-top: 6px;
+      color: #a99bff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 4px;
+    }
+    h1 { font-size: 32px; }
+    p { color: #b5bfd4; line-height: 1.6; }
+    #chat-form {
+      display: grid;
+      gap: 10px;
+    }
+    .chat-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      padding: 10px;
+      border: 1px solid #454363;
+      background: #151a2d;
+      color: #e8eaf4;
+    }
+    .icon-button svg { width: 20px; height: 20px; }
+    .mic-button.is-listening {
+      border-color: #e76679;
+      background: #b93e54;
+      color: white;
+      animation: mic-pulse 1.2s ease-in-out infinite;
+    }
+    .send-button { flex: 1; min-width: 0; width: auto; height: 44px; margin: 0; padding: 10px; }
+    #file-input { display: none; }
+    .attachment-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .attachment-list[hidden] { display: none; }
+    .attachment-chip {
+      max-width: 100%;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 8px;
+      border: 1px solid #454363;
+      border-radius: 8px;
+      background: #151a2d;
+      color: #d7dbea;
+      font-size: 12px;
+    }
+    .attachment-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .remove-attachment {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 20px;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      color: #c5cce0;
+      font-size: 17px;
+    }
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #454363;
+      background: #090e1c;
+      color: white;
+      margin-top: 0;
+    }
+    button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 10px;
+      background: #9180ff;
+      color: #080b16;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .conversation {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-top: 20px;
+      text-align: left;
+    }
+    .message {
+      max-width: 85%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      color: #e8eaf4;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+    .message.user {
+      align-self: flex-end;
+      background: #39345f;
+    }
+    .message.assistant {
+      align-self: flex-start;
+      background: #090e1c;
+      border: 1px solid #30344b;
+    }
+    .message.assistant.is-streaming::after {
+      display: inline-block;
+      width: 7px;
+      height: 1em;
+      margin-left: 4px;
+      background: #a99bff;
+      content: "";
+      vertical-align: text-bottom;
+      animation: caret-blink 1s steps(2, start) infinite;
+    }
+    .message-label {
+      display: block;
+      margin-bottom: 4px;
+      color: #a99bff;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .message-attachments { margin-bottom: 7px; color: #b5bfd4; font-size: 12px; line-height: 1.4; }
+    .empty-state, #chat-status {
+      color: #b5bfd4;
+      line-height: 1.6;
+    }
+    #chat-status { min-height: 1.6em; margin: 8px 0 0; }
+    @keyframes mic-pulse {
+      50% { box-shadow: 0 0 0 5px #e7667933; }
+    }
+    @keyframes caret-blink {
+      to { visibility: hidden; }
+    }
+    .clear-button {
+      width: auto;
+      padding: 8px 12px;
+      background: transparent;
+      border: 1px solid #454363;
+      color: #b5bfd4;
+    }
+    .clear-button[hidden] { display: none; }
+    .send-button:disabled { cursor: wait; opacity: .7; }
+    .sidebar { animation: sidebar-arrive 600ms cubic-bezier(.2, .75, .25, 1) both; }
+    .card { animation: panel-arrive 720ms cubic-bezier(.2, .75, .25, 1) 90ms both; }
+    .brand-mark { animation: mark-arrive 850ms cubic-bezier(.2, .8, .25, 1) 220ms both; }
+    @keyframes sidebar-arrive {
+      from { opacity: 0; transform: translateX(-18px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes panel-arrive {
+      from { opacity: 0; transform: translateY(14px) scale(.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes mark-arrive {
+      from { opacity: 0; transform: scale(.72) rotate(-18deg); }
+      to { opacity: 1; transform: scale(1) rotate(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sidebar, .card, .brand-mark { animation: none; }
+      .mic-button.is-listening { animation: none; }
+      .message.assistant.is-streaming::after { animation: none; }
+    }
+    @media (max-width: 700px) {
+      .workspace { grid-template-columns: 132px minmax(0, 1fr); }
+      .sidebar {
+        height: 100vh;
+        gap: 12px;
+        padding: 14px 8px;
+      }
+      .sidebar-heading { font-size: 10px; letter-spacing: 1px; }
+      .new-chat-button { padding: 10px 8px; font-size: 12px; }
+      .history-item { padding: 8px 6px; font-size: 12px; }
+      .history-list { max-height: none; }
+      .profile { padding-top: 10px; }
+      .app-main { padding: 12px 8px; }
+      .card { padding: 22px 10px; }
+      .brand { gap: 8px; }
+      .brand-mark { width: 34px; height: 34px; flex-basis: 34px; }
+      .brand-name { font-size: 15px; letter-spacing: 1px; }
+      .brand-name span { letter-spacing: 3px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="workspace">
+    <aside class="sidebar" aria-label="Chat history and user information">
+      <div>
+        <h2 class="sidebar-heading">Chat history</h2>
+        <button id="new-chat" class="new-chat-button" type="button">+ New chat</button>
+      </div>
+      <nav id="history-list" class="history-list" aria-label="Saved conversations"></nav>
+      <div class="profile">
+        <div class="profile-avatar" aria-hidden="true">G</div>
+        <div>
+          <span class="profile-name">Guest</span>
+          <span class="profile-note">Saved on this device</span>
+        </div>
+      </div>
+    </aside>
+    <main class="app-main">
+      <section class="card" aria-label="Sukuna Nexus chat">
+        <div class="brand" role="img" aria-label="Sukuna Nexus">
+          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M24 2 42 12.5v21L24 44 6 33.5v-21L24 2Z" fill="none" stroke="#a99bff" stroke-width="1.5" />
+            <path d="m24 8 12.8 7.5v15L24 38l-12.8-7.5v-15L24 8Z" fill="#a99bff" fill-opacity=".12" stroke="#d5ceff" stroke-width="1.5" />
+            <path d="M16 30V18l16 12V18" fill="none" stroke="#f5f2ff" stroke-linecap="square" stroke-linejoin="miter" stroke-width="3" />
+            <circle cx="24" cy="24" r="2.5" fill="#a99bff" />
+          </svg>
+          <div class="brand-name">SUKUNA<span>NEXUS</span></div>
+        </div>
+        <h1>NEXUS AI</h1>
+        <p>Your everyday AI starts here.</p>
+        <form id="chat-form">
+          <label for="question" hidden>Your message</label>
+          <input id="question" placeholder="Ask NEXUS anything..." autocomplete="off" />
+          <div id="attachment-list" class="attachment-list" hidden></div>
+          <div class="chat-actions">
+            <input id="file-input" type="file" accept="image/*,.pdf,.txt,.md,.csv,.docx" multiple aria-label="Attach photos or documents" />
+            <button id="attach-button" class="icon-button" type="button" aria-label="Attach photos or documents" title="Attach photos or documents">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m21.4 11.6-8.5 8.5a5 5 0 0 1-7.1-7.1l9.2-9.2a3.5 3.5 0 0 1 5 5l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5" />
+              </svg>
+            </button>
+            <button id="mic-button" class="icon-button mic-button" type="button" aria-label="Start voice input" title="Start voice input" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="12" rx="3" />
+                <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8" />
+              </svg>
+            </button>
+            <button class="send-button" type="submit">Send message ↑</button>
+          </div>
+        </form>
+        <div id="conversation" class="conversation" aria-label="Conversation" aria-live="polite"></div>
+        <p id="chat-status" aria-live="polite"></p>
+        <button id="delete-chat" class="clear-button" type="button" hidden>Delete conversation</button>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const chatsKey = "sukuna-nexus-chats";
+    const legacyHistoryKey = "sukuna-nexus-conversation";
+    const conversationElement = document.getElementById("conversation");
+    const chatForm = document.getElementById("chat-form");
+    const questionInput = document.getElementById("question");
+    const micButton = document.getElementById("mic-button");
+    const fileInput = document.getElementById("file-input");
+    const attachButton = document.getElementById("attach-button");
+    const attachmentList = document.getElementById("attachment-list");
+    const sendButton = chatForm.querySelector("button[type='submit']");
+    const statusElement = document.getElementById("chat-status");
+    const historyList = document.getElementById("history-list");
+    const newChatButton = document.getElementById("new-chat");
+    const deleteChatButton = document.getElementById("delete-chat");
+    let pendingFiles = [];
+
+    function createChatId() {
+      return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function cleanMessages(messages) {
+      if (!Array.isArray(messages)) return [];
+      return messages.filter(message =>
+        message && ["user", "assistant"].includes(message.role) &&
+        typeof message.content === "string"
+      );
+    }
+
+    function titleFromMessages(messages) {
+      const firstMessage = messages.find(message => message.role === "user");
+      if (!firstMessage) return "New conversation";
+      const title = firstMessage.content.replace(/\s+/g, " ").trim();
+      const characters = Array.from(title);
+      return characters.length > 36 ? `${characters.slice(0, 36).join("")}...` : title;
+    }
+
+    function loadChats() {
+      try {
+        const savedChats = JSON.parse(localStorage.getItem(chatsKey) || "null");
+        if (Array.isArray(savedChats)) {
+          return savedChats.map(chat => {
+            const messages = cleanMessages(chat.messages);
+            return {
+              id: typeof chat.id === "string" ? chat.id : createChatId(),
+              title: typeof chat.title === "string" ? chat.title : titleFromMessages(messages),
+              updatedAt: Number(chat.updatedAt) || 0,
+              messages
+            };
+          }).filter(chat => chat.messages.length > 0);
+        }
+
+        const legacyMessages = cleanMessages(
+          JSON.parse(localStorage.getItem(legacyHistoryKey) || "[]")
+        );
+        if (legacyMessages.length > 0) {
+          const migratedChat = {
+            id: createChatId(),
+            title: titleFromMessages(legacyMessages),
+            updatedAt: Date.now(),
+            messages: legacyMessages
+          };
+          localStorage.setItem(chatsKey, JSON.stringify([migratedChat]));
+          return [migratedChat];
+        }
+      } catch (error) {
+        console.error("Could not load saved conversations", error);
+      }
+      return [];
+    }
+
+    let chats = loadChats();
+    let activeChatId = [...chats].sort((first, second) => second.updatedAt - first.updatedAt)[0]?.id || null;
+    let conversation = chats.find(chat => chat.id === activeChatId)?.messages || [];
+
+    function saveChats() {
+      try {
+        localStorage.setItem(chatsKey, JSON.stringify(chats));
+      } catch (error) {
+        console.error("Could not save conversations", error);
+        statusElement.textContent = "History could not be saved in this browser.";
+      }
+    }
+
+    function renderHistory() {
+      historyList.replaceChildren();
+      const recentChats = [...chats].sort((first, second) => second.updatedAt - first.updatedAt);
+
+      if (recentChats.length === 0) {
+        const emptyHistory = document.createElement("div");
+        emptyHistory.className = "empty-history";
+        emptyHistory.textContent = "Your conversations will appear here.";
+        historyList.append(emptyHistory);
+        return;
+      }
+
+      for (const chat of recentChats) {
+        const item = document.createElement("button");
+        item.className = "history-item";
+        item.type = "button";
+        item.textContent = chat.title;
+        item.setAttribute("aria-current", String(chat.id === activeChatId));
+        item.addEventListener("click", () => {
+          activeChatId = chat.id;
+          conversation = chat.messages;
+          statusElement.textContent = "";
+          renderHistory();
+          renderConversation();
+        });
+        historyList.append(item);
+      }
+    }
+
+    function renderConversation() {
+      conversationElement.replaceChildren();
+      deleteChatButton.hidden = !activeChatId;
+
+      if (conversation.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "empty-state";
+        emptyState.textContent = "Welcome! What shall we explore today?";
+        conversationElement.append(emptyState);
+        return;
+      }
+
+      for (const message of conversation) {
+        const bubble = document.createElement("div");
+        bubble.className = `message ${message.role}${message.streaming ? " is-streaming" : ""}`;
+
+        const label = document.createElement("span");
+        label.className = "message-label";
+        label.textContent = message.role === "user" ? "You" : "Nexus AI";
+
+        if (Array.isArray(message.attachments) && message.attachments.length > 0) {
+          const attachments = document.createElement("div");
+          attachments.className = "message-attachments";
+          attachments.textContent = `Attached: ${message.attachments.join(", ")}`;
+          bubble.append(label, attachments);
+        } else {
+          bubble.append(label);
+        }
+
+        const content = document.createElement("div");
+        content.textContent = message.content;
+        bubble.append(content);
+        conversationElement.append(bubble);
+      }
+
+      conversationElement.scrollTop = conversationElement.scrollHeight;
+    }
+
+    async function askNexus(messages, onUpdate) {
+      const includesImages = messages.some(message => Array.isArray(message.images) && message.images.length > 0);
+      const model = includesImages ? "qwen2.5vl:3b" : "qwen2.5:1.5b";
+      const response = await fetch("http://localhost:11434/api/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          model,
+          messages: messages.map(message => ({
+            role: message.role,
+            content: message.documentText
+              ? `${message.content}\n\nAttached document text:\n${message.documentText}`
+              : message.content,
+            ...(Array.isArray(message.images) && message.images.length > 0 ? {images: message.images} : {})
+          })),
+          stream: true
+        })
+      });
+
+      if (!response.ok) {
+        let detail = "Ollama connection failed";
+        try {
+          const errorData = await response.json();
+          if (errorData.error) detail = errorData.error;
+        } catch (error) {
+        }
+        throw new Error(detail);
+      }
+      if (!response.body) throw new Error("Ollama did not provide a response stream.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer = "";
+      let streamComplete = false;
+
+      function readLine(line) {
+        if (!line.trim()) return;
+        const chunk = JSON.parse(line);
+        if (chunk.error) throw new Error(chunk.error);
+        const token = chunk.message?.content;
+        if (typeof token === "string" && token.length > 0) {
+          answer += token;
+          onUpdate?.(answer);
+        }
+        if (chunk.done) streamComplete = true;
+      }
+
+      try {
+        while (!streamComplete) {
+          const {value, done} = await reader.read();
+          buffer += decoder.decode(value, {stream: !done});
+          const lines = buffer.split("\n");
+          buffer = lines.pop();
+          for (const line of lines) readLine(line);
+          if (done) {
+            if (buffer.trim()) readLine(buffer);
+            break;
+          }
+        }
+      } catch (error) {
+        await reader.cancel().catch(() => {});
+        throw error;
+      }
+
+      return answer;
+    }
+
+    function renderPendingFiles() {
+      attachmentList.replaceChildren();
+      attachmentList.hidden = pendingFiles.length === 0;
+      pendingFiles.forEach((file, index) => {
+        const chip = document.createElement("div");
+        chip.className = "attachment-chip";
+        const name = document.createElement("span");
+        name.className = "attachment-name";
+        name.textContent = file.name;
+        const remove = document.createElement("button");
+        remove.className = "remove-attachment";
+        remove.type = "button";
+        remove.setAttribute("aria-label", `Remove ${file.name}`);
+        remove.textContent = "×";
+        remove.addEventListener("click", () => {
+          pendingFiles.splice(index, 1);
+          renderPendingFiles();
+        });
+        chip.append(name, remove);
+        attachmentList.append(chip);
+      });
+    }
+
+    attachButton.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => {
+      const maxFiles = 4;
+      const maxFileSize = 10 * 1024 * 1024;
+      for (const file of fileInput.files) {
+        if (pendingFiles.length >= maxFiles) {
+          statusElement.textContent = `Attach up to ${maxFiles} files at a time.`;
+          break;
+        }
+        if (file.size > maxFileSize) {
+          statusElement.textContent = `${file.name} is too large. Each file must be 10 MB or less.`;
+          continue;
+        }
+        if (!pendingFiles.some(pendingFile => pendingFile.name === file.name && pendingFile.size === file.size)) {
+          pendingFiles.push(file);
+        }
+      }
+      fileInput.value = "";
+      renderPendingFiles();
+    });
+
+    function loadExternalScript(source, globalName) {
+      if (window[globalName]) return Promise.resolve(window[globalName]);
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = source;
+        script.onload = () => window[globalName]
+          ? resolve(window[globalName])
+          : reject(new Error("Could not load the document reader."));
+        script.onerror = () => reject(new Error("Could not load the document reader. Check your internet connection."));
+        document.head.append(script);
+      });
+    }
+
+    function readBlobAsDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Could not read the selected image."));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function prepareImage(file) {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.82));
+      if (!imageBlob) throw new Error(`Could not process ${file.name}.`);
+      const dataUrl = await readBlobAsDataUrl(imageBlob);
+      return dataUrl.slice(dataUrl.indexOf(",") + 1);
+    }
+
+    async function extractPdfText(file) {
+      const pdfjs = await loadExternalScript(
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+        "pdfjsLib"
+      );
+      pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const pdf = await pdfjs.getDocument({data: await file.arrayBuffer()}).promise;
+      const pages = [];
+      for (let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 30); pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        pages.push(content.items.map(item => item.str).join(" "));
+        if (pages.join("\n").length >= 20000) break;
+      }
+      return pages.join("\n").slice(0, 20000);
+    }
+
+    async function prepareAttachment(file) {
+      const extension = file.name.split(".").pop().toLowerCase();
+      if (file.type.startsWith("image/") || ["png", "jpg", "jpeg", "webp", "gif", "bmp"].includes(extension)) {
+        return {name: file.name, image: await prepareImage(file)};
+      }
+
+      let documentText;
+      if (["txt", "md", "csv", "json"].includes(extension)) {
+        documentText = (await file.text()).slice(0, 20000);
+      } else if (extension === "pdf") {
+        documentText = await extractPdfText(file);
+      } else if (extension === "docx") {
+        const mammoth = await loadExternalScript(
+          "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.9.0/mammoth.browser.min.js",
+          "mammoth"
+        );
+        const result = await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()});
+        documentText = result.value.slice(0, 20000);
+      } else {
+        throw new Error(`${file.name} is not a supported file type.`);
+      }
+
+      if (!documentText.trim()) throw new Error(`No readable text was found in ${file.name}.`);
+      return {name: file.name, documentText};
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let voiceRecognition = null;
+    let voiceBaseText = "";
+    let voiceFinalText = "";
+    let voiceRecognitionFailed = false;
+
+    function setMicListening(listening) {
+      micButton.classList.toggle("is-listening", listening);
+      micButton.setAttribute("aria-pressed", String(listening));
+      micButton.setAttribute("aria-label", listening ? "Stop voice input" : "Start voice input");
+      micButton.title = listening ? "Stop voice input" : "Start voice input";
+    }
+
+    micButton.addEventListener("click", () => {
+      if (!SpeechRecognition) {
+        statusElement.textContent = "Voice input is not supported in this browser. Try a recent version of Chrome or Edge.";
+        return;
+      }
+
+      if (voiceRecognition) {
+        voiceRecognition.stop();
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      voiceRecognition = recognition;
+      voiceBaseText = questionInput.value.trim();
+      voiceFinalText = "";
+      voiceRecognitionFailed = false;
+      recognition.lang = navigator.language || "en-US";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        setMicListening(true);
+        statusElement.textContent = "Listening... Speak your question, then pause.";
+      };
+
+      recognition.onresult = event => {
+        let interimText = "";
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const text = event.results[index][0].transcript;
+          if (event.results[index].isFinal) voiceFinalText += text;
+          else interimText += text;
+        }
+        questionInput.value = [voiceBaseText, voiceFinalText, interimText]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+      };
+
+      recognition.onerror = event => {
+        voiceRecognitionFailed = true;
+        const messages = {
+          "not-allowed": "Microphone access was blocked. Allow access in your browser settings.",
+          "service-not-allowed": "Speech recognition is blocked by this browser.",
+          "audio-capture": "No microphone was found.",
+          "no-speech": "No speech was detected. Tap the microphone to try again.",
+          network: navigator.onLine
+            ? "The browser speech service could not be reached. Try Chrome or Edge, check internet access, or type your question."
+            : "You're offline. Voice recognition needs internet; reconnect or type your question."
+        };
+        statusElement.textContent = messages[event.error] || "Voice input could not start. Please try again.";
+      };
+
+      recognition.onend = () => {
+        voiceRecognition = null;
+        setMicListening(false);
+        if (voiceRecognitionFailed) return;
+
+        if (voiceFinalText.trim()) {
+          questionInput.value = [voiceBaseText, voiceFinalText].filter(Boolean).join(" ").trim();
+          statusElement.textContent = "";
+          chatForm.requestSubmit();
+        } else {
+          statusElement.textContent = "No clear speech was detected. Check the text and send it when ready.";
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch (error) {
+        voiceRecognition = null;
+        setMicListening(false);
+        statusElement.textContent = "Voice input could not start. Please try again.";
+      }
+    });
+
+    newChatButton.addEventListener("click", () => {
+      activeChatId = null;
+      conversation = [];
+      statusElement.textContent = "";
+      renderHistory();
+      renderConversation();
+      questionInput.focus();
+    });
+
+    chatForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (voiceRecognition) {
+        voiceRecognitionFailed = true;
+        voiceRecognition.stop();
+        voiceRecognition = null;
+        setMicListening(false);
+      }
+      const question = questionInput.value.trim();
+      if ((!question && pendingFiles.length === 0) || sendButton.disabled) return;
+
+      sendButton.disabled = true;
+      statusElement.textContent = pendingFiles.length > 0 ? "Reading your files..." : "NEXUS AI is thinking...";
+      let preparedAttachments;
+      try {
+        preparedAttachments = await Promise.all(pendingFiles.map(prepareAttachment));
+      } catch (error) {
+        statusElement.textContent = error.message || "Could not read the selected files.";
+        sendButton.disabled = false;
+        return;
+      }
+
+      let activeChat = chats.find(chat => chat.id === activeChatId);
+      if (!activeChat) {
+        activeChat = {
+          id: createChatId(),
+          title: titleFromMessages([{role: "user", content: question || pendingFiles[0].name}]),
+          updatedAt: Date.now(),
+          messages: []
+        };
+        chats.push(activeChat);
+        activeChatId = activeChat.id;
+        conversation = activeChat.messages;
+      }
+
+      const userMessage = {
+        role: "user",
+        content: question || "Please review the attached file and explain its contents."
+      };
+      const documentParts = preparedAttachments
+        .filter(attachment => attachment.documentText)
+        .map(attachment => `[${attachment.name}]\n${attachment.documentText}`);
+      const images = preparedAttachments.filter(attachment => attachment.image).map(attachment => attachment.image);
+      if (preparedAttachments.length > 0) userMessage.attachments = preparedAttachments.map(attachment => attachment.name);
+      if (documentParts.length > 0) userMessage.documentText = documentParts.join("\n\n");
+      if (images.length > 0) userMessage.images = images;
+      conversation.push(userMessage);
+      activeChat.title = titleFromMessages(conversation);
+      activeChat.updatedAt = Date.now();
+      const requestConversation = conversation;
+      saveChats();
+      renderHistory();
+      renderConversation();
+      pendingFiles = [];
+      renderPendingFiles();
+      questionInput.value = "";
+      statusElement.textContent = "NEXUS AI is thinking...";
+
+      try {
+        let assistantMessage = null;
+        let streamedContent = null;
+        const answer = await askNexus(requestConversation, partialAnswer => {
+          if (!assistantMessage) {
+            assistantMessage = {role: "assistant", content: partialAnswer, streaming: true};
+            requestConversation.push(assistantMessage);
+            renderConversation();
+            streamedContent = conversationElement.querySelector(".message.assistant:last-child > div:last-child");
+            statusElement.textContent = "NEXUS AI is writing...";
+          } else {
+            assistantMessage.content = partialAnswer;
+            streamedContent.textContent = partialAnswer;
+            conversationElement.scrollTop = conversationElement.scrollHeight;
+          }
+        });
+        if (!assistantMessage) {
+          requestConversation.push({role: "assistant", content: answer});
+        } else {
+          assistantMessage.content = answer;
+          assistantMessage.streaming = false;
+        }
+        activeChat.updatedAt = Date.now();
+        saveChats();
+      } catch (error) {
+        const includesImages = requestConversation.some(message => message.images?.length);
+        const needsVisionModel = /model .* not found|model not found|pull model/i.test(error.message);
+        const errorMessage = includesImages
+          ? needsVisionModel
+            ? "Photo analysis requires Ollama's qwen2.5vl:3b vision model. Run: ollama pull qwen2.5vl:3b."
+            : `Could not analyze the photo. ${error.message} Check that Ollama is running and qwen2.5vl:3b is installed.`
+          : "Cannot connect to Ollama. Check that Ollama is running.";
+        const partialMessage = requestConversation[requestConversation.length - 1];
+        if (partialMessage?.role === "assistant" && partialMessage.streaming) {
+          partialMessage.streaming = false;
+          partialMessage.content = partialMessage.content
+            ? `${partialMessage.content}\n\n(Response interrupted.)`
+            : errorMessage;
+        } else {
+          requestConversation.push({role: "assistant", content: errorMessage});
+        }
+        activeChat.updatedAt = Date.now();
+        saveChats();
+        console.error(error);
+      } finally {
+        statusElement.textContent = "";
+        sendButton.disabled = false;
+        renderHistory();
+        renderConversation();
+        questionInput.focus();
+      }
+    });
+
+    deleteChatButton.addEventListener("click", () => {
+      chats = chats.filter(chat => chat.id !== activeChatId);
+      activeChatId = [...chats].sort((first, second) => second.updatedAt - first.updatedAt)[0]?.id || null;
+      conversation = chats.find(chat => chat.id === activeChatId)?.messages || [];
+      saveChats();
+      statusElement.textContent = "Conversation deleted.";
+      renderHistory();
+      renderConversation();
+    });
+
+    renderHistory();
+    renderConversation();
+  </script>
+</body>
+</html>
