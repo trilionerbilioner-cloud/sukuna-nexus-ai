@@ -938,15 +938,10 @@ async function askNexus(messages, onUpdate) {
         }
         activeChat.updatedAt = Date.now();
         saveChats();
-      } catch (error) {
-        const includesImages = requestConversation.some(message => message.images?.length);
-        const needsVisionModel = /model .* not found|model not found|pull model/i.test(error.message);
-        const errorMessage = includesImages
-          ? needsVisionModel
-            ? "Photo analysis requires Ollama's qwen2.5vl:3b vision model. Run: ollama pull qwen2.5vl:3b."
-            : `Could not analyze the photo. ${error.message} Check that Ollama is running and qwen2.5vl:3b is installed.`
-          : "Cannot connect to Ollama. Check that Ollama is running.";
+            } catch (error) {
+        const errorMessage = error.message || "NEXUS AI connection failed.";
         const partialMessage = requestConversation[requestConversation.length - 1];
+
         if (partialMessage?.role === "assistant" && partialMessage.streaming) {
           partialMessage.streaming = false;
           partialMessage.content = partialMessage.content
@@ -955,6 +950,7 @@ async function askNexus(messages, onUpdate) {
         } else {
           requestConversation.push({role: "assistant", content: errorMessage});
         }
+
         activeChat.updatedAt = Date.now();
         saveChats();
         console.error(error);
